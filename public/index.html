@@ -29,6 +29,10 @@
     @keyframes glint-sweep { 0% { filter: brightness(0.9) saturate(0.9); } 50% { filter: brightness(1.25) saturate(1.15); } 100% { filter: brightness(0.9) saturate(0.9); } }
     @keyframes wallet-pop { 0% { transform: translateY(4px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
     .wallet-pop { animation: wallet-pop 0.35s ease-out; }
+    @keyframes toast-in { 0% { transform: translateY(12px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+    .toast-in { animation: toast-in 0.25s ease-out; }
+    .snake-cell[data-on="snake"] { background: #f4f4f5; box-shadow: 0 0 10px rgba(255,255,255,0.25); }
+    .snake-cell[data-on="food"] { background: #e11d48; box-shadow: 0 0 12px rgba(225,29,72,0.45); }
     
     /* Live preview custom scrollbar for modal */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -41,6 +45,8 @@
 </head>
 <body class="h-full flex flex-col overflow-hidden">
   <div id="app" class="h-full flex flex-col justify-between">
+    <div id="toast-stack" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center gap-2 pointer-events-none"></div>
+
     <!-- Loading Screen -->
     <div id="loading-screen" class="fixed inset-0 bg-[#000000] z-50 flex flex-col items-center justify-center transition-opacity duration-300">
       <div class="text-xl font-bold tracking-widest text-zinc-100 animate-pulse">H & E CHAT</div>
@@ -171,6 +177,10 @@
                   <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/allin rubies</code><div class="text-zinc-500 mt-1">Risks all your rubies.</div></div>
                   <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/slots gold 25</code><div class="text-zinc-500 mt-1">Spins with a stake.</div></div>
                   <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/flip rubies 5 heads</code><div class="text-zinc-500 mt-1">Calls a coin flip.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/dice gold 50 6</code><div class="text-zinc-500 mt-1">Rolls for a number.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/crash gold 100 2.5</code><div class="text-zinc-500 mt-1">Cash out before it crashes.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/roulette gold 25 red</code><div class="text-zinc-500 mt-1">Red, black, or green.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/work</code><div class="text-zinc-500 mt-1">Earns a quick payout.</div></div>
                 </div>
               </div>
               <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-3">
@@ -201,6 +211,21 @@
               <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Daily Drop</div><div class="text-xs text-zinc-500 mt-1">Free gold and rubies.</div></div><button onclick="claimDailyDrop(false)" class="w-full py-3 bg-zinc-100 hover:bg-white text-black rounded-xl text-xs uppercase tracking-widest font-extrabold transition-colors">Claim</button></div>
               <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Quick Tap</div><div id="quick-tap-status" class="text-xs text-zinc-500 mt-1">Ready.</div></div><div class="grid grid-cols-2 gap-2"><button onclick="startQuickTap()" class="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Start</button><button id="quick-tap-button" onclick="quickTapHit()" class="py-3 bg-zinc-100 hover:bg-white text-black rounded-xl text-xs uppercase tracking-widest font-extrabold transition-colors">Tap</button></div></div>
               <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Crystal Hunt</div><div class="text-xs text-zinc-500 mt-1">A tiny free run every minute.</div></div><button onclick="claimCrystalHunt()" class="w-full py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Search</button></div>
+            </div>
+            <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4">
+              <div class="flex items-start justify-between gap-3">
+                <div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Snake</div><div id="snake-status" class="text-xs text-zinc-500 mt-1">Easy pays gold. Hard pays rubies.</div></div>
+                <div class="text-right"><div class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Score</div><div id="snake-score" class="text-xl text-white font-extrabold tabular-nums">0</div></div>
+              </div>
+              <div id="snake-board" class="grid grid-cols-11 gap-1 max-w-[360px] mx-auto"></div>
+              <div class="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                <button onclick="startSnake('easy')" class="py-3 bg-zinc-100 hover:bg-white text-black rounded-xl text-xs uppercase tracking-widest font-extrabold transition-colors">Easy</button>
+                <button onclick="startSnake('hard')" class="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Hard</button>
+                <button onclick="turnSnake('up')" class="py-3 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-300 transition-colors">Up</button>
+                <button onclick="turnSnake('down')" class="py-3 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-300 transition-colors">Down</button>
+                <button onclick="turnSnake('left')" class="py-3 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-300 transition-colors">Left</button>
+                <button onclick="turnSnake('right')" class="py-3 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-300 transition-colors">Right</button>
+              </div>
             </div>
           </div>
         </div>
@@ -450,7 +475,31 @@
     const WALLET_DEFAULTS = Object.freeze({ gold: 1000, rubies: 25, gamesPlayed: 0, wins: 0, losses: 0, biggestWin: 0, lastDailyAt: 0, lastHuntAt: 0, quickTapBest: 0 });
     const DAILY_DROP_MS = 20 * 60 * 60 * 1000;
     const HUNT_COOLDOWN_MS = 60 * 1000;
+    const COMMAND_CATALOG = [
+      ["/help", "Shows this private command panel."],
+      ["/bank", "Posts your gold and rubies."],
+      ["/wallet", "Posts your gold and rubies."],
+      ["/allin gold", "Risks the whole gold stack for x0 to x1000."],
+      ["/allin rubies", "Risks the whole ruby stack for x0 to x1000."],
+      ["/slots gold 25", "Spins the slots."],
+      ["/flip gold 25 heads", "Calls a coin flip."],
+      ["/highlow gold 25 low", "Calls the card high or low."],
+      ["/dice gold 50 6", "Picks a dice number."],
+      ["/roulette gold 25 red", "Bets red, black, or green."],
+      ["/crash gold 100 2.5", "Cash out before the crash."],
+      ["/work", "Earns gold."],
+      ["/beg", "Tiny free payout."],
+      ["/mine", "Mines gold with a ruby chance."],
+      ["/hunt", "Runs Crystal Hunt."],
+      ["/daily", "Claims Daily Drop."]
+    ];
+    const ALLIN_MULTIPLIERS = [
+      { m: 0, w: 42 }, { m: 1, w: 22 }, { m: 2, w: 16 }, { m: 3, w: 8 }, { m: 5, w: 5 },
+      { m: 10, w: 3 }, { m: 25, w: 1.6 }, { m: 50, w: 0.8 }, { m: 100, w: 0.35 },
+      { m: 250, w: 0.12 }, { m: 500, w: 0.04 }, { m: 1000, w: 0.01 }
+    ];
     let quickTapState = null;
+    let snakeState = null;
 
     window.addEventListener("DOMContentLoaded", () => {
       setupAuthSwitchListeners();
@@ -836,7 +885,108 @@
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { text, senderUid: currentUser.uid, senderName: currentUserDetails.username, createdAt: serverTimestamp() });
     }
 
-    async function settleWalletGame({ currency, stake, delta, won, message, announce = false, rubyBonus = 0 }) {
+    async function postChatPayload(payload) {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+        senderUid: currentUser.uid,
+        senderName: currentUserDetails.username,
+        createdAt: serverTimestamp(),
+        ...payload
+      });
+    }
+
+    function walletSnapshot(wallet = getWallet()) {
+      return { gold: wallet.gold, rubies: wallet.rubies, gamesPlayed: wallet.gamesPlayed, wins: wallet.wins, losses: wallet.losses, biggestWin: wallet.biggestWin };
+    }
+
+    async function postCommandCard(data) {
+      await postChatPayload({
+        kind: "command-card",
+        text: data.resultText || data.title || data.commandLabel,
+        commandLabel: data.commandLabel,
+        title: data.title,
+        resultText: data.resultText,
+        amountText: data.amountText || "",
+        multiplierText: data.multiplierText || "",
+        statusText: data.statusText || "",
+        tone: data.tone || "neutral",
+        walletSnapshot: data.walletSnapshot || walletSnapshot(),
+        privateTo: data.privateTo || null
+      });
+    }
+
+    async function postHelpCard() {
+      await postChatPayload({
+        kind: "help-card",
+        text: "Command help",
+        privateTo: currentUser.uid,
+        commands: COMMAND_CATALOG.map(([command, detail]) => ({ command, detail }))
+      });
+    }
+
+    function pickWeightedMultiplier() {
+      const total = ALLIN_MULTIPLIERS.reduce((sum, item) => sum + item.w, 0);
+      let roll = Math.random() * total;
+      for (const item of ALLIN_MULTIPLIERS) {
+        roll -= item.w;
+        if (roll <= 0) return item.m;
+      }
+      return 0;
+    }
+
+    function cleanCommandLabel(command) {
+      return (command || "").trim().replace(/\s+/g, " ");
+    }
+
+    function commandToneClass(tone) {
+      if (tone === "win") return "border-zinc-700 shadow-[0_0_30px_rgba(255,255,255,0.08)]";
+      if (tone === "loss") return "border-zinc-950 opacity-90";
+      return "border-zinc-900";
+    }
+
+    function renderCommandCard(msg, userMeta, time) {
+      const wallet = msg.walletSnapshot || {};
+      const tone = commandToneClass(msg.tone);
+      const div = document.createElement("div");
+      div.className = "flex justify-center py-3 animate-fade-in";
+      div.innerHTML = `
+        <div class="w-full max-w-md bg-[#070709] border ${tone} rounded-2xl p-5 text-center shadow-2xl">
+          <div class="flex flex-col items-center gap-2">
+            <img id="card-pfp-${msg.id}" src="${userMeta.avatar || DEFAULT_AVATAR}" class="w-14 h-14 rounded-full object-cover bg-black border border-zinc-900 cursor-pointer" onclick="showUserProfile('${msg.senderUid}')">
+            <div class="text-xs font-bold tracking-wide" style="color:${userMeta.nameColor || '#fff'}">${escapeHTML(userMeta.username || msg.senderName || "User")}${userMeta.badge ? ` <span>${userMeta.badge}</span>` : ""}</div>
+            <div class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">${escapeHTML(time || "")}</div>
+          </div>
+          <div class="mt-4 text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Did ${escapeHTML(msg.commandLabel || "/command")}</div>
+          <div class="mt-2 text-lg text-white font-extrabold tracking-wide">${escapeHTML(msg.title || "Result")}</div>
+          <div class="mt-1 text-sm text-zinc-300 leading-relaxed">${escapeHTML(msg.resultText || "")}</div>
+          <div class="grid grid-cols-2 gap-2 mt-4">
+            <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><div class="text-[8px] text-zinc-600 uppercase tracking-widest font-bold">Amount</div><div class="text-sm text-white font-extrabold">${escapeHTML(msg.amountText || "-")}</div></div>
+            <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><div class="text-[8px] text-zinc-600 uppercase tracking-widest font-bold">Multiplier</div><div class="text-sm text-white font-extrabold">${escapeHTML(msg.multiplierText || "-")}</div></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <div class="bg-black/30 border border-zinc-900 rounded-xl p-3"><div class="text-[8px] text-zinc-600 uppercase tracking-widest font-bold">Gold</div><div class="text-xs text-zinc-200 font-extrabold tabular-nums">${formatAmount(wallet.gold || 0)}</div></div>
+            <div class="bg-black/30 border border-zinc-900 rounded-xl p-3"><div class="text-[8px] text-zinc-600 uppercase tracking-widest font-bold">Rubies</div><div class="text-xs text-zinc-200 font-extrabold tabular-nums">${formatAmount(wallet.rubies || 0)}</div></div>
+          </div>
+          ${msg.statusText ? `<div class="mt-3 text-[10px] text-zinc-500 uppercase tracking-widest font-bold">${escapeHTML(msg.statusText)}</div>` : ""}
+        </div>`;
+      return div;
+    }
+
+    function renderHelpCard(msg) {
+      const commands = Array.isArray(msg.commands) ? msg.commands : COMMAND_CATALOG.map(([command, detail]) => ({ command, detail }));
+      const div = document.createElement("div");
+      div.className = "flex justify-center py-3 animate-fade-in";
+      div.innerHTML = `
+        <div class="w-full max-w-2xl bg-[#070709] border border-zinc-800 rounded-2xl p-5 text-center shadow-2xl">
+          <div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Command Center</div>
+          <div class="mt-2 text-lg text-white font-extrabold tracking-wide">Only you can see this.</div>
+          <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            ${commands.map(item => `<div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100 text-xs">${escapeHTML(item.command)}</code><div class="text-[11px] text-zinc-500 mt-1">${escapeHTML(item.detail)}</div></div>`).join("")}
+          </div>
+        </div>`;
+      return div;
+    }
+
+    async function settleWalletGame({ currency, stake, delta, won, message, announce = false, rubyBonus = 0, commandLabel = "", multiplierText = "", title = "" }) {
       const wallet = getWallet();
       wallet[currency] = Math.max(0, wallet[currency] + delta);
       wallet.rubies = Math.max(0, wallet.rubies + rubyBonus);
@@ -845,7 +995,21 @@
       wallet.biggestWin = Math.max(wallet.biggestWin || 0, Math.max(0, delta) + (rubyBonus * 100));
       await saveWallet(wallet);
       showGameResult(message, won);
-      if (announce) await postChatText(message);
+      if (announce) {
+        if (commandLabel) {
+          await postCommandCard({
+            commandLabel,
+            title: title || (won ? "Won" : "Lost"),
+            resultText: message,
+            amountText: `${formatAmount(Math.abs(delta || stake))} ${currencyLabel(currency)}`,
+            multiplierText: multiplierText || (won ? "x2" : "x0"),
+            tone: won ? "win" : "loss",
+            walletSnapshot: walletSnapshot(wallet)
+          });
+        } else {
+          await postChatText(message);
+        }
+      }
     }
 
     async function playAllIn(currency, announce = false) {
@@ -855,15 +1019,36 @@
       if (amount <= 0) {
         const emptyMessage = `${currentUserDetails.username} tried to go all in with ${currencyLabel(currency)}, but the wallet is empty.`;
         showGameResult(emptyMessage, false);
-        if (announce) await postChatText(emptyMessage);
+        if (announce) await postCommandCard({ commandLabel: `/allin ${currencyLabel(currency)}`, title: "Nothing to risk", resultText: emptyMessage, amountText: `0 ${currencyLabel(currency)}`, multiplierText: "x0", tone: "loss" });
         return;
       }
-      const won = Math.random() < (currency === "rubies" ? 0.45 : 0.48);
-      const after = won ? amount * 2 : 0;
-      const message = won
-        ? `${currentUserDetails.username} went all in with ${formatAmount(amount)} ${currencyLabel(currency)} and doubled it to ${formatAmount(after)}.`
-        : `${currentUserDetails.username} went all in with ${formatAmount(amount)} ${currencyLabel(currency)} and lost the whole stack.`;
-      await settleWalletGame({ currency, stake: amount, delta: won ? amount : -amount, won, message, announce });
+      const multiplier = pickWeightedMultiplier();
+      const payout = Math.floor(amount * multiplier);
+      const delta = payout - amount;
+      wallet[currency] = Math.max(0, wallet[currency] + delta);
+      wallet.gamesPlayed += 1;
+      if (multiplier > 1) wallet.wins += 1; else wallet.losses += 1;
+      wallet.biggestWin = Math.max(wallet.biggestWin || 0, Math.max(0, delta));
+      await saveWallet(wallet);
+      const resultText = multiplier === 0
+        ? `${currentUserDetails.username} lost the whole stack.`
+        : multiplier === 1
+          ? `${currentUserDetails.username} landed x1 and got the stake back.`
+          : `${currentUserDetails.username} hit x${multiplier} and turned ${formatAmount(amount)} into ${formatAmount(payout)}.`;
+      const tone = multiplier > 1 ? "win" : "loss";
+      const title = multiplier > 1 ? "Won" : multiplier === 1 ? "Held" : "Lost";
+      showGameResult(resultText, multiplier > 0);
+      if (announce) {
+        await postCommandCard({
+          commandLabel: `/allin ${currencyLabel(currency)}`,
+          title,
+          resultText,
+          amountText: `${formatAmount(Math.abs(delta))} ${currencyLabel(currency)}`,
+          multiplierText: `x${multiplier}`,
+          tone,
+          walletSnapshot: walletSnapshot(wallet)
+        });
+      }
     }
 
     window.playAllInFromUI = function() {
@@ -880,7 +1065,7 @@
       const message = won
         ? `${currentUserDetails.username} called ${call}, it landed ${landed}, and won ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`
         : `${currentUserDetails.username} called ${call}, it landed ${landed}, and lost ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`;
-      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? setup.stake : -setup.stake, won, message, announce });
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? setup.stake : -setup.stake, won, message, announce, commandLabel: `/flip ${currencyLabel(setup.currency)} ${formatAmount(setup.stake)} ${call}`, multiplierText: won ? "x2" : "x0" });
     }
 
     window.playCoinFlip = function(choice) {
@@ -901,7 +1086,7 @@
       const message = won
         ? `${currentUserDetails.username} spun ${spin.join(" | ")} and won ${formatAmount(payout)} ${currencyLabel(setup.currency)}.`
         : `${currentUserDetails.username} spun ${spin.join(" | ")} and lost ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`;
-      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? payout : -setup.stake, won, message, announce, rubyBonus: spin.filter(x => x === "Ruby").length === 3 ? 1 : 0 });
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? payout : -setup.stake, won, message, announce, rubyBonus: spin.filter(x => x === "Ruby").length === 3 ? 1 : 0, commandLabel: `/slots ${currencyLabel(setup.currency)} ${formatAmount(setup.stake)}`, multiplierText: won ? `x${Math.max(1, Math.floor(payout / setup.stake))}` : "x0" });
     }
 
     window.playSlotsFromUI = function() {
@@ -919,14 +1104,14 @@
         await saveWallet(wallet);
         const pushMessage = `${currentUserDetails.username} pulled ${label}. Seven pushes, so the stake came back.`;
         showGameResult(pushMessage, true);
-        if (announce) await postChatText(pushMessage);
+        if (announce) await postCommandCard({ commandLabel: `/highlow ${currencyLabel(setup.currency)} ${formatAmount(setup.stake)} ${prediction}`, title: "Pushed", resultText: pushMessage, amountText: `0 ${currencyLabel(setup.currency)}`, multiplierText: "x1", tone: "neutral", walletSnapshot: walletSnapshot(wallet) });
         return;
       }
       const won = prediction === "high" ? card > 7 : card < 7;
       const message = won
         ? `${currentUserDetails.username} called ${prediction}, pulled ${label}, and won ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`
         : `${currentUserDetails.username} called ${prediction}, pulled ${label}, and lost ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`;
-      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? setup.stake : -setup.stake, won, message, announce });
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? setup.stake : -setup.stake, won, message, announce, commandLabel: `/highlow ${currencyLabel(setup.currency)} ${formatAmount(setup.stake)} ${prediction}`, multiplierText: won ? "x2" : "x0" });
     }
 
     window.playHighLow = function(prediction) {
@@ -940,7 +1125,7 @@
       if (remaining > 0) {
         const waitMessage = `Daily Drop is still warming up. ${formatTimeLeft(remaining)} left.`;
         showGameResult(waitMessage, false);
-        if (announce) await postChatText(waitMessage);
+        if (announce) await postCommandCard({ commandLabel: "/daily", title: "Not Ready", resultText: waitMessage, amountText: "-", multiplierText: "-", tone: "loss", walletSnapshot: walletSnapshot(wallet) });
         return;
       }
       const gold = randomInt(250, 650);
@@ -951,7 +1136,7 @@
       await saveWallet(wallet);
       const message = `${currentUserDetails.username} claimed the Daily Drop: +${formatAmount(gold)} gold and +${formatAmount(rubies)} rubies.`;
       showGameResult(message, true);
-      if (announce) await postChatText(message);
+      if (announce) await postCommandCard({ commandLabel: "/daily", title: "Claimed", resultText: message, amountText: `+${formatAmount(gold)} gold / +${formatAmount(rubies)} rubies`, multiplierText: "free", tone: "win", walletSnapshot: walletSnapshot(wallet) });
     }
 
     window.claimDailyDrop = function(announce = false) {
@@ -1027,12 +1212,174 @@
       if (quickTapState.hits >= quickTapState.target) finishQuickTap().catch(() => {});
     };
 
+    async function playDiceGame(currencyOverride, stakeOverride, guessOverride, announce = false) {
+      const setup = gameSetup(currencyOverride, stakeOverride, 25);
+      if (!setup) return;
+      const guess = Math.min(6, Math.max(1, Math.floor(Number(guessOverride) || 6)));
+      const roll = randomInt(1, 6);
+      const won = roll === guess;
+      const delta = won ? setup.stake * 5 : -setup.stake;
+      const message = won
+        ? `${currentUserDetails.username} called ${guess}, rolled ${roll}, and hit a clean x6.`
+        : `${currentUserDetails.username} called ${guess}, rolled ${roll}, and missed.`;
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta, won, message, announce, commandLabel: `/dice ${currencyLabel(setup.currency)} ${formatAmount(setup.stake)} ${guess}`, multiplierText: won ? "x6" : "x0" });
+    }
+
+    async function playRouletteGame(currencyOverride, stakeOverride, pickOverride, announce = false) {
+      const setup = gameSetup(currencyOverride, stakeOverride, 25);
+      if (!setup) return;
+      const pick = ["red", "black", "green"].includes((pickOverride || "").toLowerCase()) ? pickOverride.toLowerCase() : "red";
+      const roll = randomInt(0, 36);
+      const landed = roll === 0 ? "green" : roll % 2 === 0 ? "black" : "red";
+      const multiplier = pick === landed ? (pick === "green" ? 14 : 2) : 0;
+      const won = multiplier > 0;
+      const delta = won ? setup.stake * (multiplier - 1) : -setup.stake;
+      const message = won
+        ? `${currentUserDetails.username} picked ${pick}, landed ${landed} ${roll}, and won.`
+        : `${currentUserDetails.username} picked ${pick}, landed ${landed} ${roll}, and lost.`;
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta, won, message, announce, commandLabel: `/roulette ${currencyLabel(setup.currency)} ${formatAmount(setup.stake)} ${pick}`, multiplierText: `x${multiplier}` });
+    }
+
+    async function playCrashGame(currencyOverride, stakeOverride, cashoutOverride, announce = false) {
+      const setup = gameSetup(currencyOverride, stakeOverride, 25);
+      if (!setup) return;
+      const cashout = Math.min(1000, Math.max(1.1, Number(cashoutOverride) || 2));
+      const crash = Math.max(1, Math.min(1000, Number((1 / Math.max(0.001, Math.random())).toFixed(2))));
+      const won = cashout <= crash;
+      const delta = won ? Math.floor(setup.stake * (cashout - 1)) : -setup.stake;
+      const message = won
+        ? `${currentUserDetails.username} cashed out at x${cashout} before the x${crash} crash.`
+        : `${currentUserDetails.username} aimed for x${cashout}, but it crashed at x${crash}.`;
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta, won, message, announce, commandLabel: `/crash ${currencyLabel(setup.currency)} ${formatAmount(setup.stake)} ${cashout}`, multiplierText: won ? `x${cashout}` : "x0" });
+    }
+
+    async function earnFreePayout(commandLabel, mode, announce = false) {
+      const wallet = getWallet();
+      let gold = 0, rubies = 0, title = "Paid";
+      if (mode === "work") { gold = randomInt(90, 240); title = "Worked"; }
+      if (mode === "beg") { gold = randomInt(15, 90); rubies = Math.random() < 0.08 ? 1 : 0; title = "Found"; }
+      if (mode === "mine") { gold = randomInt(70, 180); rubies = Math.random() < 0.22 ? randomInt(1, 2) : 0; title = "Mined"; }
+      wallet.gold += gold;
+      wallet.rubies += rubies;
+      await saveWallet(wallet);
+      const resultText = `${currentUserDetails.username} got +${formatAmount(gold)} gold${rubies ? ` and +${rubies} rubies` : ""}.`;
+      showGameResult(resultText, true);
+      if (announce) await postCommandCard({ commandLabel, title, resultText, amountText: `+${formatAmount(gold)} gold${rubies ? ` / +${rubies} rubies` : ""}`, multiplierText: "free", tone: "win", walletSnapshot: walletSnapshot(wallet) });
+    }
+
+    function buildSnakeBoard() {
+      const board = document.getElementById("snake-board");
+      if (!board) return;
+      board.innerHTML = "";
+      for (let i = 0; i < 121; i++) {
+        const cell = document.createElement("div");
+        cell.className = "snake-cell aspect-square rounded-[4px] bg-[#050507] border border-zinc-900";
+        board.appendChild(cell);
+      }
+    }
+
+    function placeSnakeFood() {
+      const occupied = new Set(snakeState.snake.map(p => `${p.x},${p.y}`));
+      let food;
+      do { food = { x: randomInt(0, 10), y: randomInt(0, 10) }; } while (occupied.has(`${food.x},${food.y}`));
+      snakeState.food = food;
+    }
+
+    function renderSnake() {
+      const board = document.getElementById("snake-board");
+      if (!board || !snakeState) return;
+      const cells = Array.from(board.children);
+      cells.forEach(cell => cell.dataset.on = "");
+      snakeState.snake.forEach(part => {
+        const cell = cells[part.y * 11 + part.x];
+        if (cell) cell.dataset.on = "snake";
+      });
+      const foodCell = cells[snakeState.food.y * 11 + snakeState.food.x];
+      if (foodCell) foodCell.dataset.on = "food";
+      const scoreEl = document.getElementById("snake-score");
+      if (scoreEl) scoreEl.textContent = snakeState.score;
+      const statusEl = document.getElementById("snake-status");
+      if (statusEl) statusEl.textContent = snakeState.mode === "hard" ? "Hard mode pays rubies." : "Easy mode pays gold.";
+    }
+
+    async function finishSnake() {
+      if (!snakeState || snakeState.done) return;
+      clearInterval(snakeState.timer);
+      snakeState.done = true;
+      const score = snakeState.score;
+      const wallet = getWallet();
+      const hard = snakeState.mode === "hard";
+      const gold = score * (hard ? 55 : 35);
+      const rubies = hard ? Math.floor(score / 3) : 0;
+      wallet.gold += gold;
+      wallet.rubies += rubies;
+      await saveWallet(wallet);
+      const message = `Snake ended at score ${score}: +${formatAmount(gold)} gold${rubies ? ` and +${rubies} rubies` : ""}.`;
+      const statusEl = document.getElementById("snake-status");
+      if (statusEl) statusEl.textContent = message;
+      showGameResult(message, score > 0);
+    }
+
+    function tickSnake() {
+      if (!snakeState || snakeState.done) return;
+      const head = snakeState.snake[0];
+      const next = { x: head.x + snakeState.dir.x, y: head.y + snakeState.dir.y };
+      const hitWall = next.x < 0 || next.y < 0 || next.x > 10 || next.y > 10;
+      const hitSelf = snakeState.snake.some(part => part.x === next.x && part.y === next.y);
+      if (hitWall || hitSelf) { finishSnake().catch(() => {}); return; }
+      snakeState.snake.unshift(next);
+      if (next.x === snakeState.food.x && next.y === snakeState.food.y) {
+        snakeState.score += 1;
+        placeSnakeFood();
+      } else {
+        snakeState.snake.pop();
+      }
+      renderSnake();
+    }
+
+    window.startSnake = function(mode = "easy") {
+      if (snakeState?.timer) clearInterval(snakeState.timer);
+      buildSnakeBoard();
+      snakeState = { mode, snake: [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }], dir: { x: 1, y: 0 }, score: 0, done: false, timer: null };
+      placeSnakeFood();
+      renderSnake();
+      snakeState.timer = setInterval(tickSnake, mode === "hard" ? 115 : 170);
+    };
+
+    window.turnSnake = function(direction) {
+      if (!snakeState || snakeState.done) return;
+      const dirs = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+      const next = dirs[direction];
+      if (!next) return;
+      if (snakeState.dir.x + next.x === 0 && snakeState.dir.y + next.y === 0) return;
+      snakeState.dir = next;
+    };
+
+    window.addEventListener("keydown", e => {
+      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
+      const map = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
+      window.turnSnake(map[e.key]);
+    });
+
     async function handleChatCommand(text) {
       const parts = text.trim().split(/\s+/);
       const command = (parts[0] || "").toLowerCase();
       const loweredParts = parts.map(part => part.toLowerCase());
-      if (command === "/wallet") {
-        await postChatText(`${currentUserDetails.username} opened the wallet: ${walletLine()}.`);
+      if (command === "/help") {
+        await postHelpCard();
+        return true;
+      }
+      if (command === "/wallet" || command === "/bank" || command === "/bal" || command === "/balance") {
+        const wallet = getWallet();
+        await postCommandCard({
+          commandLabel: command,
+          title: "Bank",
+          resultText: `${currentUserDetails.username} has ${walletLine(wallet)}.`,
+          amountText: `${formatAmount(wallet.gold)} gold / ${formatAmount(wallet.rubies)} rubies`,
+          multiplierText: "bank",
+          tone: "neutral",
+          walletSnapshot: walletSnapshot(wallet)
+        });
         return true;
       }
       if (command === "/daily") {
@@ -1047,7 +1394,7 @@
           return true;
         }
         if (!currency) {
-          await postChatText("Use /allin gold or /allin rubies.");
+          showToast("Use /allin gold or /allin rubies.");
           return true;
         }
         await playAllIn(currency, true);
@@ -1073,6 +1420,48 @@
         const stakeToken = parts.find((part, index) => index > 1 && (/^\d+$/.test(part) || ["all", "max"].includes(part.toLowerCase())));
         const stake = parseStakeToken(stakeToken, currency, 25);
         await playHighLowGame(prediction, currency, stake, true);
+        return true;
+      }
+      if (command === "/dice") {
+        const currency = parseCurrencyToken(parts[1]) || "gold";
+        const stake = parseStakeToken(parts[2], currency, 25);
+        const guess = parts.find((part, index) => index > 1 && /^[1-6]$/.test(part)) || "6";
+        await playDiceGame(currency, stake, guess, true);
+        return true;
+      }
+      if (command === "/roulette" || command === "/roul") {
+        const currency = parseCurrencyToken(parts[1]) || "gold";
+        const stake = parseStakeToken(parts[2], currency, 25);
+        const pick = loweredParts.find(part => ["red", "black", "green"].includes(part)) || "red";
+        await playRouletteGame(currency, stake, pick, true);
+        return true;
+      }
+      if (command === "/crash") {
+        const currency = parseCurrencyToken(parts[1]) || "gold";
+        const stake = parseStakeToken(parts[2], currency, 25);
+        const cashout = parts.find((part, index) => index > 2 && Number(part) > 0) || "2";
+        await playCrashGame(currency, stake, cashout, true);
+        return true;
+      }
+      if (command === "/work") {
+        await earnFreePayout("/work", "work", true);
+        return true;
+      }
+      if (command === "/beg") {
+        await earnFreePayout("/beg", "beg", true);
+        return true;
+      }
+      if (command === "/mine") {
+        await earnFreePayout("/mine", "mine", true);
+        return true;
+      }
+      if (command === "/hunt" || command === "/crystal") {
+        await earnFreePayout(command, "mine", true);
+        return true;
+      }
+      if (command === "/snake") {
+        openGames();
+        showToast("Snake is in Games. Hard mode pays rubies.");
         return true;
       }
       return false;
@@ -1132,8 +1521,19 @@
         if (snapshot.empty) { mc.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-zinc-700 py-10"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-8 h-8 text-zinc-800 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" /></svg><div class="text-[10px] font-bold uppercase tracking-widest mb-0.5">Quiet room</div><div class="text-[9px] text-zinc-700 uppercase tracking-widest">Send a message to start</div></div>`; return; }
         let msgs = []; snapshot.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
         msgs.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)).forEach(msg => {
+          if (msg.privateTo && msg.privateTo !== currentUser.uid) return;
           const userMeta = allUsersCache[msg.senderUid] || { username: msg.senderName || "User", avatar: DEFAULT_AVATAR, nameColor: "#FFFFFF", badge: "" };
           const time = msg.createdAt ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          if (msg.kind === "help-card") {
+            mc.appendChild(renderHelpCard(msg));
+            return;
+          }
+          if (msg.kind === "command-card") {
+            const card = renderCommandCard(msg, userMeta, time);
+            mc.appendChild(card);
+            applyPfpStylesToElement(document.getElementById(`card-pfp-${msg.id}`), userMeta);
+            return;
+          }
           const div = document.createElement("div"); div.className = "flex items-start gap-4 py-3 border-b border-zinc-950/40 group animate-fade-in";
           div.innerHTML = `<div class="relative flex-shrink-0"><img id="msg-pfp-${msg.id}" src="${userMeta.avatar || DEFAULT_AVATAR}" class="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-all z-10 relative bg-black" onclick="showUserProfile('${msg.senderUid}')"></div><div class="flex-1 min-w-0"><div class="flex items-baseline gap-2"><span onclick="showUserProfile('${msg.senderUid}')" class="text-xs font-bold transition-colors cursor-pointer tracking-wide flex items-center"><span style="color: ${userMeta.nameColor || '#fff'}">${userMeta.username}</span>${userMeta.badge ? `<span class="ml-1 text-xs select-none">${userMeta.badge}</span>` : ''}</span><span class="text-[9px] text-zinc-600 font-medium">${time}</span></div><p class="text-[13px] text-zinc-300 mt-1 leading-relaxed break-words select-text whitespace-pre-wrap">${escapeHTML(msg.text)}</p></div>`;
           mc.appendChild(div);
@@ -1150,9 +1550,10 @@
         try {
           if (text.startsWith("/")) {
             const handled = await handleChatCommand(text);
+            if (!handled) showToast("Invalid command. Type /help.");
             if (handled) return;
           }
-          await postChatText(text);
+          if (!text.startsWith("/")) await postChatText(text);
         } catch(err) { showGameResult("That did not land. Try again.", false); } 
       });
     }
@@ -1233,19 +1634,33 @@
     };
 
     window.closeProfileViewer = () => hideElement("profile-view-modal");
-    window.openProfileSettings = () => { populateLocalSessionViews(); updateLivePreview(); showElement("profile-edit-modal"); switchEditTab('basic'); };
+    window.openProfileSettings = () => { if (window.renderCustomizationGrids) { window.renderCustomizationGrids(); window.updateDynamicStyles?.(); } populateLocalSessionViews(); updateLivePreview(); showElement("profile-edit-modal"); switchEditTab('basic'); };
     window.closeProfileSettings = () => hideElement("profile-edit-modal");
     window.toggleSidebar = () => document.getElementById("sidebar").classList.toggle("hidden");
     
     function scrollToNewestMessage() { const c = document.getElementById("messages-container"); c.scrollTop = c.scrollHeight; }
     function showElement(id) { document.getElementById(id).classList.remove("hidden"); }
     function hideElement(id) { document.getElementById(id).classList.add("hidden"); }
+    function showToast(message) {
+      const stack = document.getElementById("toast-stack");
+      if (!stack) return;
+      const toast = document.createElement("div");
+      toast.className = "toast-in bg-[#070709] border border-zinc-800 text-zinc-100 shadow-2xl rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-widest";
+      toast.textContent = message;
+      stack.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+        toast.style.transition = "all 0.2s ease";
+      }, 1800);
+      setTimeout(() => toast.remove(), 2200);
+    }
     function showAuthAlert(msg) { const a = document.getElementById("auth-alert"); a.textContent = msg; a.classList.remove("hidden"); }
     function hideAuthAlert() { document.getElementById("auth-alert").classList.add("hidden"); }
     function escapeHTML(str) { return str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t]||t)); }
   </script>
   <script type="module">
-    import { badgeOptions, bgOptions, borderStyles, glowIntensities, pfpStyles } from './customization (1).js';
+    import { badgeOptions, bgOptions, borderStyles, glowIntensities, pfpStyles } from './customization.js';
     
     window.customizationOptions = { badgeOptions, bgOptions, borderStyles, glowIntensities, pfpStyles };
     
@@ -1310,6 +1725,8 @@
     }
     
     // Automatically render when loaded
+    window.renderCustomizationGrids = renderCustomizationGrids;
+    window.updateDynamicStyles = updateDynamicStyles;
     renderCustomizationGrids();
     updateDynamicStyles();
   </script>
