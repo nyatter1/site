@@ -25,6 +25,10 @@
     .anim-rainbow { animation: rainbow-border 3s linear infinite; }
     @keyframes pulse-border { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); } }
     .anim-pulse-border { animation: pulse-border 2s ease-in-out infinite; }
+    @keyframes luxe-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes glint-sweep { 0% { filter: brightness(0.9) saturate(0.9); } 50% { filter: brightness(1.25) saturate(1.15); } 100% { filter: brightness(0.9) saturate(0.9); } }
+    @keyframes wallet-pop { 0% { transform: translateY(4px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+    .wallet-pop { animation: wallet-pop 0.35s ease-out; }
     
     /* Live preview custom scrollbar for modal */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -87,6 +91,10 @@
             <div class="relative"><img id="my-avatar" src="" alt="Avatar" class="w-9 h-9 rounded-full object-cover border border-zinc-850"><span class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-black"></span></div>
             <div class="flex-1 min-w-0"><div id="my-username" class="text-xs font-semibold text-white truncate">User</div><div id="my-gender" class="text-[10px] text-zinc-500 truncate uppercase tracking-wider">Gender</div></div>
           </div>
+          <button onclick="openWallet()" class="w-full grid grid-cols-2 gap-2 rounded-xl border border-zinc-900 bg-zinc-950/40 p-2 text-left hover:bg-zinc-900/60 transition-colors active:scale-[0.99]">
+            <div><div class="text-[8px] text-zinc-600 uppercase tracking-widest font-bold">Gold</div><div id="sidebar-wallet-gold" class="text-xs text-zinc-100 font-extrabold tabular-nums">0</div></div>
+            <div><div class="text-[8px] text-zinc-600 uppercase tracking-widest font-bold">Rubies</div><div id="sidebar-wallet-rubies" class="text-xs text-zinc-100 font-extrabold tabular-nums">0</div></div>
+          </button>
           <div class="grid grid-cols-2 gap-2 pt-1">
             <button onclick="openProfileSettings()" class="flex items-center justify-center gap-1.5 py-2 bg-zinc-900/40 hover:bg-zinc-900 border border-zinc-900 text-[10px] text-zinc-400 hover:text-white rounded-lg transition-colors font-bold uppercase tracking-wider">Customize</button>
             <button onclick="handleLogout()" class="flex items-center justify-center gap-1.5 py-2 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 text-[10px] text-zinc-500 hover:text-zinc-300 rounded-lg transition-colors font-bold uppercase tracking-wider">Logout</button>
@@ -98,6 +106,10 @@
           <div class="flex items-center gap-3">
             <button onclick="toggleSidebar()" class="text-zinc-500 hover:text-white mr-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></button>
             <div><span class="text-xs font-bold text-white uppercase tracking-widest">H & E Chat Room</span><div class="text-[9px] text-zinc-500 flex items-center gap-1 mt-0.5"><span class="w-1 h-1 bg-green-500 rounded-full inline-block animate-pulse"></span>Connected</div></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openWallet()" class="min-w-0 flex items-center gap-1.5 px-3 py-2 bg-[#080808] hover:bg-zinc-900 border border-zinc-900 rounded-xl text-[10px] uppercase tracking-widest font-bold text-zinc-300 transition-colors active:scale-95"><span class="hidden sm:inline">Wallet</span><span id="header-wallet-gold">0</span><span class="text-zinc-600">/</span><span id="header-wallet-rubies">0</span></button>
+            <button onclick="openGames()" class="px-3 py-2 bg-zinc-100 hover:bg-white text-black rounded-xl text-[10px] uppercase tracking-widest font-extrabold transition-colors active:scale-95">Games</button>
           </div>
         </header>
         <div id="messages-container" class="flex-1 overflow-y-auto px-6 py-6 space-y-6"><div class="flex items-center justify-center h-full text-zinc-700 text-xs uppercase tracking-widest font-semibold">No whispers yet...</div></div>
@@ -121,6 +133,75 @@
             <div class="flex items-center gap-2"><h4 id="viewer-username" class="text-lg font-bold text-white tracking-wide">User</h4><span id="viewer-badge" class="text-sm"></span></div>
             <div class="flex flex-wrap gap-2 mt-2"><span id="viewer-gender" class="px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-[9px] rounded-full uppercase tracking-wider font-bold">Female</span><span id="viewer-age" class="px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-[9px] rounded-full uppercase tracking-wider font-bold">19 Years</span></div>
             <div class="mt-4 pt-3 border-t border-zinc-900/60"><span class="text-[9px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">About</span><p id="viewer-bio" class="text-zinc-400 text-xs leading-relaxed italic">"No bio..."</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET & GAMES MODAL -->
+    <div id="wallet-games-modal" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+      <div class="w-full max-w-5xl bg-[#070709] border border-zinc-900 rounded-2xl overflow-hidden shadow-2xl relative my-8 max-h-[90vh] flex flex-col">
+        <div class="p-5 border-b border-zinc-900 flex justify-between items-center bg-[#070709]">
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Wallet</h3>
+          </div>
+          <button onclick="closeWalletGames()" class="text-zinc-500 hover:text-white transition-colors bg-zinc-900/50 hover:bg-zinc-800 p-2 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div class="flex gap-2 p-4 border-b border-zinc-900/60 bg-[#050507] hide-scrollbar overflow-x-auto whitespace-nowrap px-6">
+          <button type="button" id="wallet-tab-wallet" onclick="switchWalletTab('wallet')" class="px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-100 bg-white/10 hover:bg-white/20 transition-all flex-shrink-0">Wallet</button>
+          <button type="button" id="wallet-tab-games" onclick="switchWalletTab('games')" class="px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-500 bg-transparent hover:bg-white/5 transition-all flex-shrink-0">Games</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-[#050507]">
+          <div id="wallet-panel" class="space-y-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div class="p-4 bg-[#0a0a0f] border border-zinc-900 rounded-2xl"><div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Gold</div><div id="modal-wallet-gold" class="text-2xl text-white font-extrabold tabular-nums">0</div></div>
+              <div class="p-4 bg-[#0a0a0f] border border-zinc-900 rounded-2xl"><div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Rubies</div><div id="modal-wallet-rubies" class="text-2xl text-white font-extrabold tabular-nums">0</div></div>
+              <div class="p-4 bg-[#0a0a0f] border border-zinc-900 rounded-2xl"><div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Played</div><div id="modal-wallet-games" class="text-2xl text-white font-extrabold tabular-nums">0</div></div>
+              <div class="p-4 bg-[#0a0a0f] border border-zinc-900 rounded-2xl"><div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Best Hit</div><div id="modal-wallet-best" class="text-2xl text-white font-extrabold tabular-nums">0</div></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div class="lg:col-span-2 p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between gap-3"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Chat Commands</div><div class="text-xs text-zinc-500 mt-1">Type them straight into chat.</div></div><button onclick="claimDailyDrop(false)" class="px-4 py-2 bg-zinc-100 hover:bg-white text-black rounded-xl text-[10px] uppercase tracking-widest font-extrabold transition-colors">Daily Drop</button></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/wallet</code><div class="text-zinc-500 mt-1">Shows your balance.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/daily</code><div class="text-zinc-500 mt-1">Claims a free drop.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/allin gold</code><div class="text-zinc-500 mt-1">Risks all your gold.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/allin rubies</code><div class="text-zinc-500 mt-1">Risks all your rubies.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/slots gold 25</code><div class="text-zinc-500 mt-1">Spins with a stake.</div></div>
+                  <div class="bg-[#050507] border border-zinc-900 rounded-xl p-3"><code class="text-zinc-100">/flip rubies 5 heads</code><div class="text-zinc-500 mt-1">Calls a coin flip.</div></div>
+                </div>
+              </div>
+              <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Record</div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="bg-[#050507] rounded-xl border border-zinc-900 p-3"><div class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Wins</div><div id="modal-wallet-wins" class="text-lg text-white font-extrabold tabular-nums">0</div></div>
+                  <div class="bg-[#050507] rounded-xl border border-zinc-900 p-3"><div class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Losses</div><div id="modal-wallet-losses" class="text-lg text-white font-extrabold tabular-nums">0</div></div>
+                </div>
+                <div id="wallet-daily-note" class="text-xs text-zinc-500 leading-relaxed bg-[#050507] border border-zinc-900 rounded-xl p-3">Daily Drop is ready.</div>
+              </div>
+            </div>
+          </div>
+          <div id="games-panel" class="hidden space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-3 p-4 bg-[#0a0a0f] border border-zinc-900 rounded-2xl">
+              <div class="grid grid-cols-2 gap-3">
+                <select id="game-currency" class="w-full bg-[#121214] border border-zinc-800 text-white rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-zinc-600 transition-colors"><option value="gold">Gold</option><option value="rubies">Rubies</option></select>
+                <input type="number" id="game-stake" min="1" value="25" class="w-full bg-[#121214] border border-zinc-800 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-600 transition-colors" placeholder="Stake">
+              </div>
+              <button onclick="playAllInFromUI()" class="bg-zinc-100 hover:bg-white text-black rounded-xl text-[10px] uppercase tracking-widest font-extrabold transition-colors active:scale-95">All In</button>
+            </div>
+            <div id="game-result" class="min-h-12 p-4 bg-[#0a0a0f] border border-zinc-900 rounded-2xl text-sm text-zinc-300 leading-relaxed">Pick a game and make it hurt a little.</div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Coin Flip</div><div class="text-xs text-zinc-500 mt-1">Double or lose the stake.</div></div><div class="grid grid-cols-2 gap-2"><button onclick="playCoinFlip('heads')" class="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Heads</button><button onclick="playCoinFlip('tails')" class="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Tails</button></div></div>
+              <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Slots</div><div class="text-xs text-zinc-500 mt-1">Pairs pay. Triples hit harder.</div></div><button onclick="playSlotsFromUI()" class="w-full py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Spin</button></div>
+              <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">High Low</div><div class="text-xs text-zinc-500 mt-1">Seven pushes. Everything else bites.</div></div><div class="grid grid-cols-2 gap-2"><button onclick="playHighLow('high')" class="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">High</button><button onclick="playHighLow('low')" class="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Low</button></div></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Daily Drop</div><div class="text-xs text-zinc-500 mt-1">Free gold and rubies.</div></div><button onclick="claimDailyDrop(false)" class="w-full py-3 bg-zinc-100 hover:bg-white text-black rounded-xl text-xs uppercase tracking-widest font-extrabold transition-colors">Claim</button></div>
+              <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Quick Tap</div><div id="quick-tap-status" class="text-xs text-zinc-500 mt-1">Ready.</div></div><div class="grid grid-cols-2 gap-2"><button onclick="startQuickTap()" class="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Start</button><button id="quick-tap-button" onclick="quickTapHit()" class="py-3 bg-zinc-100 hover:bg-white text-black rounded-xl text-xs uppercase tracking-widest font-extrabold transition-colors">Tap</button></div></div>
+              <div class="p-5 bg-[#0a0a0f] border border-zinc-900 rounded-2xl space-y-4"><div><div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Crystal Hunt</div><div class="text-xs text-zinc-500 mt-1">A tiny free run every minute.</div></div><button onclick="claimCrystalHunt()" class="w-full py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs uppercase tracking-widest font-bold text-zinc-100 transition-colors">Search</button></div>
+            </div>
           </div>
         </div>
       </div>
@@ -170,9 +251,12 @@
             <div>
               <h3 class="text-sm font-bold text-white uppercase tracking-wider">Customiser</h3>
             </div>
-            <button onclick="closeProfileSettings()" class="text-zinc-500 hover:text-white transition-colors bg-zinc-900/50 hover:bg-zinc-800 p-2 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="randomiseProfileLook()" class="px-4 py-2 bg-zinc-100 hover:bg-white text-black rounded-xl text-[10px] uppercase font-extrabold tracking-wider transition-colors active:scale-95">Surprise Me</button>
+              <button onclick="closeProfileSettings()" class="text-zinc-500 hover:text-white transition-colors bg-zinc-900/50 hover:bg-zinc-800 p-2 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
           </div>
 
           <div class="flex gap-2 p-4 border-b border-zinc-900/60 bg-[#050507] hide-scrollbar overflow-x-auto whitespace-nowrap px-6">
@@ -363,12 +447,17 @@
 
     const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231f1f23'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
     const DEFAULT_BANNER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 150' fill='%23050505'><rect width='400' height='150' fill='%23050505'/></svg>";
+    const WALLET_DEFAULTS = Object.freeze({ gold: 1000, rubies: 25, gamesPlayed: 0, wins: 0, losses: 0, biggestWin: 0, lastDailyAt: 0, lastHuntAt: 0, quickTapBest: 0 });
+    const DAILY_DROP_MS = 20 * 60 * 60 * 1000;
+    const HUNT_COOLDOWN_MS = 60 * 1000;
+    let quickTapState = null;
 
     window.addEventListener("DOMContentLoaded", () => {
       setupAuthSwitchListeners();
       setupAuthFormSubmit();
       setupChatFormSubmit();
       setupImageUploadCompressors();
+      setupWalletControls();
       
       onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -397,6 +486,24 @@
     window.applyColorPreset = function(color) {
       document.getElementById("edit-name-color").value = color;
       document.getElementById("name-color-hex").textContent = color.toUpperCase();
+      updateLivePreview();
+    };
+
+    window.randomiseProfileLook = function() {
+      const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+      const names = ["edit_badge_input", "edit_pfp_style", "edit_card_bg", "edit_card_style", "edit_card_glow"];
+      names.forEach(name => {
+        const inputs = Array.from(document.querySelectorAll(`input[name="${name}"]`));
+        if (inputs.length) pick(inputs).checked = true;
+      });
+      const colors = ["#ffffff", "#f4f4f5", "#ef4444", "#f97316", "#f59e0b", "#eab308", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef", "#ec4899", "#f43f5e"];
+      const nameColor = pick(colors), pfpColor = pick(colors), cardColor = pick(colors);
+      document.getElementById("edit-name-color").value = nameColor;
+      document.getElementById("name-color-hex").textContent = nameColor.toUpperCase();
+      document.getElementById("edit-pfp-color").value = pfpColor;
+      document.getElementById("pfp-color-hex").textContent = pfpColor.toUpperCase();
+      document.getElementById("edit-card-color").value = cardColor;
+      document.getElementById("edit-pfp-width").value = pick(["1px", "2px", "3px", "4px", "6px", "8px"]);
       updateLivePreview();
     };
 
@@ -442,7 +549,7 @@
             await setDoc(userDocRef, {
               uid: credentials.user.uid, username, age: ageVal, gender: genderVal, bio: bioVal || "No bio written yet...",
               avatar: DEFAULT_AVATAR, banner: DEFAULT_BANNER, nameColor: "#FFFFFF", badge: "",
-              pfpStyle: "none", pfpWidth: "2px", pfpColor: "#ffffff", cardStyle: "border-zinc-900", cardColor: "#ffffff", cardGlow: "none", cardBg: "#000000", lastActive: serverTimestamp()
+              pfpStyle: "none", pfpWidth: "2px", pfpColor: "#ffffff", cardStyle: "border-zinc-900", cardColor: "#ffffff", cardGlow: "none", cardBg: "#000000", wallet: createStarterWallet(), lastActive: serverTimestamp()
             });
           } else {
             await signInWithEmailAndPassword(auth, email, password);
@@ -461,11 +568,13 @@
       if (!userDetails) {
         const defaultName = currentUser.email ? currentUser.email.split('@')[0] : "User";
         userDocId = defaultName.toLowerCase();
-        userDetails = { uid: currentUser.uid, username: defaultName, age: 18, gender: "unknown", bio: "Welcome!", avatar: DEFAULT_AVATAR, banner: DEFAULT_BANNER, nameColor: "#FFFFFF", badge: "", pfpStyle: "none", pfpWidth: "2px", pfpColor: "#ffffff", cardStyle: "border-zinc-900", cardColor: "#ffffff", cardGlow: "none", cardBg: "#070709", lastActive: serverTimestamp() };
+        userDetails = { uid: currentUser.uid, username: defaultName, age: 18, gender: "unknown", bio: "Welcome!", avatar: DEFAULT_AVATAR, banner: DEFAULT_BANNER, nameColor: "#FFFFFF", badge: "", pfpStyle: "none", pfpWidth: "2px", pfpColor: "#ffffff", cardStyle: "border-zinc-900", cardColor: "#ffffff", cardGlow: "none", cardBg: "#070709", wallet: createStarterWallet(), lastActive: serverTimestamp() };
         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userDocId), userDetails);
       }
-      currentUserDetails = { ...userDetails, docId: userDocId };
-      await updateDoc(doc(db, "artifacts", appId, "public", "data", "users", userDocId), { online: true, lastActive: serverTimestamp() });
+      const repairedWallet = normaliseWallet(userDetails.wallet);
+      const walletPatch = walletNeedsRepair(userDetails.wallet) ? { wallet: repairedWallet } : {};
+      currentUserDetails = { ...userDetails, wallet: repairedWallet, docId: userDocId };
+      await updateDoc(doc(db, "artifacts", appId, "public", "data", "users", userDocId), { online: true, lastActive: serverTimestamp(), ...walletPatch });
       if (window.innerWidth >= 768) document.getElementById("sidebar").classList.remove("hidden");
       populateLocalSessionViews();
       subscribeToUsers(); subscribeToMessages();
@@ -479,6 +588,8 @@
       document.getElementById("my-gender").textContent = currentUserDetails.gender;
       document.getElementById("my-avatar").src = currentUserDetails.avatar || DEFAULT_AVATAR;
       applyPfpStylesToElement(document.getElementById("my-avatar"), currentUserDetails);
+      currentUserDetails.wallet = normaliseWallet(currentUserDetails.wallet);
+      updateWalletViews();
 
       // Populate form (this is done dynamically via mapping now)
       document.getElementById("edit-age-input").value = currentUserDetails.age || 18;
@@ -549,6 +660,8 @@
       
       const pStyle = data.pfpStyle || "none";
       pfpEl.setAttribute("data-pfp-style", pStyle);
+      pfpEl.style.setProperty("--pfp-color", data.pfpColor || "#ffffff");
+      pfpEl.style.setProperty("--pfp-width", data.pfpWidth || "2px");
 
       if (pStyle.includes("spin")) pfpEl.classList.add("anim-spin-slow");
       if (pStyle.includes("rainbow")) pfpEl.classList.add("anim-rainbow");
@@ -567,11 +680,403 @@
       card.setAttribute("data-card-style", cStyle);
       card.setAttribute("data-card-glow", cGlow);
       card.setAttribute("data-card-bg", cBg);
+      card.style.setProperty("--card-color", profile.cardColor || "#ffffff");
+      card.style.setProperty("--live-bg", cBg || "#070709");
 
       if (cStyle.includes("rainbow")) card.classList.add("anim-rainbow");
     }
 
     function hexToRgb(h) { const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h); return r ? `${parseInt(r[1],16)}, ${parseInt(r[2],16)}, ${parseInt(r[3],16)}` : "255, 255, 255"; }
+
+    function createStarterWallet() {
+      return { ...WALLET_DEFAULTS };
+    }
+
+    function normaliseWallet(wallet = {}) {
+      const base = createStarterWallet();
+      const clean = { ...base, ...(wallet || {}) };
+      Object.keys(base).forEach(key => {
+        clean[key] = Math.max(0, Math.floor(Number(clean[key] ?? base[key]) || 0));
+      });
+      return clean;
+    }
+
+    function walletNeedsRepair(wallet) {
+      const clean = normaliseWallet(wallet);
+      return !wallet || Object.keys(clean).some(key => Math.floor(Number(wallet[key] ?? -1)) !== clean[key]);
+    }
+
+    function getWallet() {
+      if (!currentUserDetails) return createStarterWallet();
+      currentUserDetails.wallet = normaliseWallet(currentUserDetails.wallet);
+      return { ...currentUserDetails.wallet };
+    }
+
+    function formatAmount(value) {
+      return Math.max(0, Math.floor(Number(value) || 0)).toLocaleString();
+    }
+
+    function walletLine(wallet = getWallet()) {
+      return `${formatAmount(wallet.gold)} gold and ${formatAmount(wallet.rubies)} rubies`;
+    }
+
+    function formatTimeLeft(ms) {
+      const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      if (hours <= 0) return `${minutes}m`;
+      return `${hours}h ${minutes}m`;
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function updateWalletViews() {
+      const wallet = getWallet();
+      const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+      setText("header-wallet-gold", formatAmount(wallet.gold));
+      setText("header-wallet-rubies", formatAmount(wallet.rubies));
+      setText("sidebar-wallet-gold", formatAmount(wallet.gold));
+      setText("sidebar-wallet-rubies", formatAmount(wallet.rubies));
+      setText("modal-wallet-gold", formatAmount(wallet.gold));
+      setText("modal-wallet-rubies", formatAmount(wallet.rubies));
+      setText("modal-wallet-games", formatAmount(wallet.gamesPlayed));
+      setText("modal-wallet-wins", formatAmount(wallet.wins));
+      setText("modal-wallet-losses", formatAmount(wallet.losses));
+      setText("modal-wallet-best", formatAmount(wallet.biggestWin));
+      const dailyNote = document.getElementById("wallet-daily-note");
+      if (dailyNote) {
+        const remaining = DAILY_DROP_MS - (Date.now() - (wallet.lastDailyAt || 0));
+        dailyNote.textContent = remaining > 0 ? `Daily Drop is ready in ${formatTimeLeft(remaining)}.` : "Daily Drop is ready.";
+      }
+    }
+
+    function setupWalletControls() {
+      updateWalletViews();
+    }
+
+    async function saveWallet(wallet) {
+      if (!currentUserDetails || !currentUserDetails.docId) return;
+      currentUserDetails.wallet = normaliseWallet(wallet);
+      updateWalletViews();
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUserDetails.docId), { wallet: currentUserDetails.wallet, lastActive: serverTimestamp() });
+    }
+
+    function showGameResult(message, good = true) {
+      const el = document.getElementById("game-result");
+      if (!el) return;
+      el.textContent = message;
+      el.className = `min-h-12 p-4 bg-[#0a0a0f] border rounded-2xl text-sm leading-relaxed ${good ? "border-zinc-800 text-zinc-200" : "border-zinc-900 text-zinc-500"}`;
+      el.classList.remove("wallet-pop");
+      void el.offsetWidth;
+      el.classList.add("wallet-pop");
+    }
+
+    window.openWallet = function() {
+      updateWalletViews();
+      showElement("wallet-games-modal");
+      switchWalletTab("wallet");
+    };
+
+    window.openGames = function() {
+      updateWalletViews();
+      showElement("wallet-games-modal");
+      switchWalletTab("games");
+    };
+
+    window.closeWalletGames = function() {
+      hideElement("wallet-games-modal");
+    };
+
+    window.switchWalletTab = function(tabName) {
+      const walletPanel = document.getElementById("wallet-panel"), gamesPanel = document.getElementById("games-panel"), walletTab = document.getElementById("wallet-tab-wallet"), gamesTab = document.getElementById("wallet-tab-games");
+      if (!walletPanel || !gamesPanel || !walletTab || !gamesTab) return;
+      const active = "px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-100 bg-white/10 hover:bg-white/20 transition-all flex-shrink-0";
+      const idle = "px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-500 bg-transparent hover:bg-white/5 transition-all flex-shrink-0";
+      walletPanel.classList.toggle("hidden", tabName !== "wallet");
+      gamesPanel.classList.toggle("hidden", tabName !== "games");
+      walletTab.className = tabName === "wallet" ? active : idle;
+      gamesTab.className = tabName === "games" ? active : idle;
+    };
+
+    function parseCurrencyToken(value) {
+      const raw = (value || "").toLowerCase().replace(/\s+/g, "");
+      if (!raw) return null;
+      if (raw.includes("gold") && raw.includes("rub")) return "both";
+      if (["gold", "g", "coin", "coins"].includes(raw)) return "gold";
+      if (["ruby", "rubies", "r", "gem", "gems"].includes(raw)) return "rubies";
+      return null;
+    }
+
+    function currencyLabel(currency) {
+      return currency === "rubies" ? "rubies" : "gold";
+    }
+
+    function parseStakeToken(value, currency, fallback = 25) {
+      const wallet = getWallet();
+      const raw = (value || "").toString().toLowerCase();
+      if (["all", "allin", "max"].includes(raw)) return wallet[currency];
+      const parsed = Math.floor(Number(raw));
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    }
+
+    function gameSetup(currencyOverride, stakeOverride, fallbackStake = 25) {
+      const currency = currencyOverride || document.getElementById("game-currency")?.value || "gold";
+      const stake = Math.max(1, Math.floor(Number(stakeOverride ?? document.getElementById("game-stake")?.value ?? fallbackStake) || fallbackStake));
+      const wallet = getWallet();
+      if (wallet[currency] < stake) {
+        showGameResult(`You need ${formatAmount(stake - wallet[currency])} more ${currencyLabel(currency)} for that stake.`, false);
+        return null;
+      }
+      return { currency, stake, wallet };
+    }
+
+    async function postChatText(text) {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { text, senderUid: currentUser.uid, senderName: currentUserDetails.username, createdAt: serverTimestamp() });
+    }
+
+    async function settleWalletGame({ currency, stake, delta, won, message, announce = false, rubyBonus = 0 }) {
+      const wallet = getWallet();
+      wallet[currency] = Math.max(0, wallet[currency] + delta);
+      wallet.rubies = Math.max(0, wallet.rubies + rubyBonus);
+      wallet.gamesPlayed += 1;
+      if (won) wallet.wins += 1; else wallet.losses += 1;
+      wallet.biggestWin = Math.max(wallet.biggestWin || 0, Math.max(0, delta) + (rubyBonus * 100));
+      await saveWallet(wallet);
+      showGameResult(message, won);
+      if (announce) await postChatText(message);
+    }
+
+    async function playAllIn(currency, announce = false) {
+      const wallet = getWallet();
+      if (!currency || currency === "both") return;
+      const amount = wallet[currency];
+      if (amount <= 0) {
+        const emptyMessage = `${currentUserDetails.username} tried to go all in with ${currencyLabel(currency)}, but the wallet is empty.`;
+        showGameResult(emptyMessage, false);
+        if (announce) await postChatText(emptyMessage);
+        return;
+      }
+      const won = Math.random() < (currency === "rubies" ? 0.45 : 0.48);
+      const after = won ? amount * 2 : 0;
+      const message = won
+        ? `${currentUserDetails.username} went all in with ${formatAmount(amount)} ${currencyLabel(currency)} and doubled it to ${formatAmount(after)}.`
+        : `${currentUserDetails.username} went all in with ${formatAmount(amount)} ${currencyLabel(currency)} and lost the whole stack.`;
+      await settleWalletGame({ currency, stake: amount, delta: won ? amount : -amount, won, message, announce });
+    }
+
+    window.playAllInFromUI = function() {
+      const currency = document.getElementById("game-currency")?.value || "gold";
+      playAllIn(currency, false).catch(() => showGameResult("That one did not land. Try again.", false));
+    };
+
+    async function playCoinFlipGame(choice = "heads", currencyOverride, stakeOverride, announce = false) {
+      const setup = gameSetup(currencyOverride, stakeOverride, 25);
+      if (!setup) return;
+      const call = choice === "tails" ? "tails" : "heads";
+      const landed = Math.random() < 0.5 ? "heads" : "tails";
+      const won = landed === call;
+      const message = won
+        ? `${currentUserDetails.username} called ${call}, it landed ${landed}, and won ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`
+        : `${currentUserDetails.username} called ${call}, it landed ${landed}, and lost ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`;
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? setup.stake : -setup.stake, won, message, announce });
+    }
+
+    window.playCoinFlip = function(choice) {
+      playCoinFlipGame(choice).catch(() => showGameResult("The coin slipped. Try again.", false));
+    };
+
+    async function playSlotsGame(currencyOverride, stakeOverride, announce = false) {
+      const setup = gameSetup(currencyOverride, stakeOverride, 25);
+      if (!setup) return;
+      const reels = ["Cherry", "Lemon", "Star", "Seven", "Crown", "Ruby"];
+      const spin = [reels[randomInt(0, reels.length - 1)], reels[randomInt(0, reels.length - 1)], reels[randomInt(0, reels.length - 1)]];
+      const counts = spin.reduce((acc, item) => ({ ...acc, [item]: (acc[item] || 0) + 1 }), {});
+      const best = Math.max(...Object.values(counts));
+      let payout = 0;
+      if (best === 3) payout = spin[0] === "Seven" ? setup.stake * 10 : setup.stake * 5;
+      else if (best === 2) payout = setup.stake * 2;
+      const won = payout > 0;
+      const message = won
+        ? `${currentUserDetails.username} spun ${spin.join(" | ")} and won ${formatAmount(payout)} ${currencyLabel(setup.currency)}.`
+        : `${currentUserDetails.username} spun ${spin.join(" | ")} and lost ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`;
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? payout : -setup.stake, won, message, announce, rubyBonus: spin.filter(x => x === "Ruby").length === 3 ? 1 : 0 });
+    }
+
+    window.playSlotsFromUI = function() {
+      playSlotsGame().catch(() => showGameResult("The reels jammed. Try again.", false));
+    };
+
+    async function playHighLowGame(prediction = "high", currencyOverride, stakeOverride, announce = false) {
+      const setup = gameSetup(currencyOverride, stakeOverride, 25);
+      if (!setup) return;
+      const card = randomInt(1, 13);
+      const label = card === 1 ? "Ace" : card === 11 ? "Jack" : card === 12 ? "Queen" : card === 13 ? "King" : String(card);
+      if (card === 7) {
+        const wallet = getWallet();
+        wallet.gamesPlayed += 1;
+        await saveWallet(wallet);
+        const pushMessage = `${currentUserDetails.username} pulled ${label}. Seven pushes, so the stake came back.`;
+        showGameResult(pushMessage, true);
+        if (announce) await postChatText(pushMessage);
+        return;
+      }
+      const won = prediction === "high" ? card > 7 : card < 7;
+      const message = won
+        ? `${currentUserDetails.username} called ${prediction}, pulled ${label}, and won ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`
+        : `${currentUserDetails.username} called ${prediction}, pulled ${label}, and lost ${formatAmount(setup.stake)} ${currencyLabel(setup.currency)}.`;
+      await settleWalletGame({ currency: setup.currency, stake: setup.stake, delta: won ? setup.stake : -setup.stake, won, message, announce });
+    }
+
+    window.playHighLow = function(prediction) {
+      playHighLowGame(prediction).catch(() => showGameResult("That card stuck. Try again.", false));
+    };
+
+    async function claimDailyDrop(announce = false) {
+      const wallet = getWallet();
+      const now = Date.now();
+      const remaining = DAILY_DROP_MS - (now - (wallet.lastDailyAt || 0));
+      if (remaining > 0) {
+        const waitMessage = `Daily Drop is still warming up. ${formatTimeLeft(remaining)} left.`;
+        showGameResult(waitMessage, false);
+        if (announce) await postChatText(waitMessage);
+        return;
+      }
+      const gold = randomInt(250, 650);
+      const rubies = randomInt(2, 6);
+      wallet.gold += gold;
+      wallet.rubies += rubies;
+      wallet.lastDailyAt = now;
+      await saveWallet(wallet);
+      const message = `${currentUserDetails.username} claimed the Daily Drop: +${formatAmount(gold)} gold and +${formatAmount(rubies)} rubies.`;
+      showGameResult(message, true);
+      if (announce) await postChatText(message);
+    }
+
+    window.claimDailyDrop = function(announce = false) {
+      claimDailyDrop(announce).catch(() => showGameResult("Daily Drop did not open. Try again.", false));
+    };
+
+    window.claimCrystalHunt = async function() {
+      const wallet = getWallet();
+      const now = Date.now();
+      const remaining = HUNT_COOLDOWN_MS - (now - (wallet.lastHuntAt || 0));
+      if (remaining > 0) {
+        showGameResult(`Crystal Hunt is ready in ${Math.ceil(remaining / 1000)}s.`, false);
+        return;
+      }
+      const gold = randomInt(35, 95);
+      const rubies = Math.random() < 0.18 ? 1 : 0;
+      wallet.gold += gold;
+      wallet.rubies += rubies;
+      wallet.lastHuntAt = now;
+      await saveWallet(wallet);
+      showGameResult(`Crystal Hunt found +${formatAmount(gold)} gold${rubies ? " and +1 ruby" : ""}.`, true);
+    };
+
+    function updateQuickTapStatus(text) {
+      const el = document.getElementById("quick-tap-status");
+      if (!el) return;
+      if (text) { el.textContent = text; return; }
+      if (!quickTapState || quickTapState.done) el.textContent = "Ready.";
+      else el.textContent = `Hits: ${quickTapState.hits}/${quickTapState.target}`;
+    }
+
+    async function finishQuickTap() {
+      if (!quickTapState || quickTapState.done) return;
+      quickTapState.done = true;
+      const hits = quickTapState.hits;
+      const target = quickTapState.target;
+      const wallet = getWallet();
+      if (hits >= target) {
+        const gold = randomInt(120, 260);
+        const rubies = Math.random() < 0.35 ? randomInt(1, 2) : 0;
+        wallet.gold += gold;
+        wallet.rubies += rubies;
+        wallet.quickTapBest = Math.max(wallet.quickTapBest || 0, hits);
+        await saveWallet(wallet);
+        const message = `Quick Tap cleared ${hits}/${target}: +${formatAmount(gold)} gold${rubies ? ` and +${rubies} rubies` : ""}.`;
+        updateQuickTapStatus(message);
+        showGameResult(message, true);
+      } else {
+        const gold = Math.max(10, hits * 8);
+        wallet.gold += gold;
+        wallet.quickTapBest = Math.max(wallet.quickTapBest || 0, hits);
+        await saveWallet(wallet);
+        const message = `Quick Tap reached ${hits}/${target}: +${formatAmount(gold)} gold for the run.`;
+        updateQuickTapStatus(message);
+        showGameResult(message, false);
+      }
+    }
+
+    window.startQuickTap = function() {
+      quickTapState = { hits: 0, target: 14, done: false };
+      updateQuickTapStatus();
+      showGameResult("Quick Tap started. Hit Tap 14 times before it closes.", true);
+      setTimeout(() => finishQuickTap().catch(() => {}), 6000);
+    };
+
+    window.quickTapHit = function() {
+      if (!quickTapState || quickTapState.done) {
+        window.startQuickTap();
+        return;
+      }
+      quickTapState.hits += 1;
+      updateQuickTapStatus();
+      if (quickTapState.hits >= quickTapState.target) finishQuickTap().catch(() => {});
+    };
+
+    async function handleChatCommand(text) {
+      const parts = text.trim().split(/\s+/);
+      const command = (parts[0] || "").toLowerCase();
+      const loweredParts = parts.map(part => part.toLowerCase());
+      if (command === "/wallet") {
+        await postChatText(`${currentUserDetails.username} opened the wallet: ${walletLine()}.`);
+        return true;
+      }
+      if (command === "/daily") {
+        await claimDailyDrop(true);
+        return true;
+      }
+      if (command === "/allin") {
+        const currency = parseCurrencyToken(parts.slice(1).join(" ")) || parseCurrencyToken(parts[1]);
+        if (currency === "both") {
+          await playAllIn("gold", true);
+          await playAllIn("rubies", true);
+          return true;
+        }
+        if (!currency) {
+          await postChatText("Use /allin gold or /allin rubies.");
+          return true;
+        }
+        await playAllIn(currency, true);
+        return true;
+      }
+      if (command === "/slots") {
+        const currency = parseCurrencyToken(parts[1]) || "gold";
+        const stake = parseStakeToken(parts[2], currency, 25);
+        await playSlotsGame(currency, stake, true);
+        return true;
+      }
+      if (command === "/flip") {
+        const currency = parseCurrencyToken(parts[1]) || "gold";
+        const sideToken = parts.find(part => ["heads", "tails", "h", "t"].includes(part.toLowerCase())) || "heads";
+        const stakeToken = parts.find((part, index) => index > 1 && (/^\d+$/.test(part) || ["all", "max"].includes(part.toLowerCase())));
+        const stake = parseStakeToken(stakeToken, currency, 25);
+        await playCoinFlipGame(sideToken.toLowerCase().startsWith("t") ? "tails" : "heads", currency, stake, true);
+        return true;
+      }
+      if (command === "/highlow") {
+        const currency = parseCurrencyToken(parts[1]) || "gold";
+        const prediction = loweredParts.includes("low") ? "low" : "high";
+        const stakeToken = parts.find((part, index) => index > 1 && (/^\d+$/.test(part) || ["all", "max"].includes(part.toLowerCase())));
+        const stake = parseStakeToken(stakeToken, currency, 25);
+        await playHighLowGame(prediction, currency, stake, true);
+        return true;
+      }
+      return false;
+    }
 
     
     window.addEventListener('visibilitychange', () => {
@@ -606,6 +1111,10 @@
         });
         users.forEach(user => {
           allUsersCache[user.uid] = user;
+          if (user.uid === currentUser.uid && currentUserDetails) {
+            currentUserDetails = { ...currentUserDetails, ...user, docId: currentUserDetails.docId, wallet: normaliseWallet(user.wallet) };
+            updateWalletViews();
+          }
           const isSelf = user.uid === currentUser.uid;
           const div = document.createElement("div");
           div.className = "flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/60 transition-colors cursor-pointer group";
@@ -638,7 +1147,13 @@
       document.getElementById("chat-input-form").addEventListener("submit", async e => {
         e.preventDefault(); const input = document.getElementById("chat-msg-input"), text = input.value.trim();
         if (!text || !currentUser) return; input.value = "";
-        try { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { text, senderUid: currentUser.uid, senderName: currentUserDetails.username, createdAt: serverTimestamp() }); } catch(err) {} 
+        try {
+          if (text.startsWith("/")) {
+            const handled = await handleChatCommand(text);
+            if (handled) return;
+          }
+          await postChatText(text);
+        } catch(err) { showGameResult("That did not land. Try again.", false); } 
       });
     }
 
@@ -730,7 +1245,7 @@
     function escapeHTML(str) { return str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t]||t)); }
   </script>
   <script type="module">
-    import { badgeOptions, bgOptions, borderStyles, glowIntensities, pfpStyles } from './customization.js';
+    import { badgeOptions, bgOptions, borderStyles, glowIntensities, pfpStyles } from './customization (1).js';
     
     window.customizationOptions = { badgeOptions, bgOptions, borderStyles, glowIntensities, pfpStyles };
     
