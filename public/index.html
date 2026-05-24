@@ -70,11 +70,11 @@
 
     <!-- MAIN CHAT INTERFACE -->
     <div id="main-interface" class="hidden flex h-full overflow-hidden bg-[#000000]">
-      <aside id="sidebar" class="w-72 bg-[#050505] border-r border-zinc-950 flex flex-col justify-between hidden md:flex transition-all duration-300">
+      <aside id="sidebar" class="w-72 flex-shrink-0 bg-[#050505] border-r border-zinc-950 flex flex-col justify-between absolute md:relative z-40 h-full hidden">
         <div class="p-6 border-b border-zinc-950">
           <div class="flex items-center justify-between">
             <h2 class="text-base font-bold tracking-widest text-white">H & E CHAT</h2>
-            <button onclick="toggleSidebar()" class="md:hidden text-zinc-500 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
+            <button onclick="toggleSidebar()" class="text-zinc-500 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
           </div>
           <div class="text-[9px] text-zinc-600 mt-0.5 uppercase tracking-widest font-semibold">Exclusively Private</div>
         </div>
@@ -96,7 +96,7 @@
       <main class="flex-1 flex flex-col bg-[#000000] relative h-full">
         <header class="h-16 border-b border-zinc-950 px-6 flex items-center justify-between bg-[#030303]/90 backdrop-blur-md">
           <div class="flex items-center gap-3">
-            <button onclick="toggleSidebar()" class="md:hidden text-zinc-500 hover:text-white mr-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></button>
+            <button onclick="toggleSidebar()" class="text-zinc-500 hover:text-white mr-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></button>
             <div><span class="text-xs font-bold text-white uppercase tracking-widest">H & E Chat Room</span><div class="text-[9px] text-zinc-500 flex items-center gap-1 mt-0.5"><span class="w-1 h-1 bg-green-500 rounded-full inline-block animate-pulse"></span>Connected</div></div>
           </div>
         </header>
@@ -137,7 +137,7 @@
             <h3 class="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">Customiser</h3>
           </div>
           
-          <div id="live-preview-card" class="w-full max-w-sm bg-[#070709] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-zinc-900 relative transition-all duration-300 mt-8">
+          <div id="live-preview-card" class="w-full max-w-sm bg-[#070709] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-zinc-900 relative transition-transform duration-300 ease-out mt-8" style="transform-style: preserve-3d;">
             <div class="h-28 bg-[#0a0a0f] relative">
               <img id="live-banner" src="" class="w-full h-full object-cover">
               <div class="absolute inset-0 bg-gradient-to-t from-[var(--live-bg,#070709)] to-transparent"></div>
@@ -175,12 +175,12 @@
             </button>
           </div>
 
-          <div class="flex border-b border-zinc-900/60 bg-[#050507] hide-scrollbar overflow-x-auto whitespace-nowrap">
-            <button type="button" id="tab-edit-basic" onclick="switchEditTab('basic')" class="px-6 py-3 text-[10px] uppercase font-bold tracking-widest text-zinc-100 border-b-2 border-white transition-colors flex-shrink-0">Identity</button>
-            <button type="button" id="tab-edit-badges" onclick="switchEditTab('badges')" class="px-6 py-3 text-[10px] uppercase font-bold tracking-widest text-zinc-600 border-b-2 border-transparent transition-colors hover:text-zinc-400 flex-shrink-0">Badges & Name</button>
-            <button type="button" id="tab-edit-avatar" onclick="switchEditTab('avatar')" class="px-6 py-3 text-[10px] uppercase font-bold tracking-widest text-zinc-600 border-b-2 border-transparent transition-colors hover:text-zinc-400 flex-shrink-0">Avatar Rings</button>
-            <button type="button" id="tab-edit-card" onclick="switchEditTab('card')" class="px-6 py-3 text-[10px] uppercase font-bold tracking-widest text-zinc-600 border-b-2 border-transparent transition-colors hover:text-zinc-400 flex-shrink-0">Card Canvas</button>
-            <button type="button" id="tab-edit-frames" onclick="switchEditTab('frames')" class="px-6 py-3 text-[10px] uppercase font-bold tracking-widest text-zinc-600 border-b-2 border-transparent transition-colors hover:text-zinc-400 flex-shrink-0">Frames & Glow</button>
+          <div class="flex gap-2 p-4 border-b border-zinc-900/60 bg-[#050507] hide-scrollbar overflow-x-auto whitespace-nowrap px-6">
+            <button type="button" id="tab-edit-basic" onclick="switchEditTab('basic')" class="px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-100 bg-white/10 hover:bg-white/20 transition-all flex-shrink-0">Identity</button>
+            <button type="button" id="tab-edit-badges" onclick="switchEditTab('badges')" class="px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-500 bg-transparent hover:bg-white/5 transition-all flex-shrink-0">Badges</button>
+            <button type="button" id="tab-edit-avatar" onclick="switchEditTab('avatar')" class="px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-500 bg-transparent hover:bg-white/5 transition-all flex-shrink-0">Avatar</button>
+            <button type="button" id="tab-edit-card" onclick="switchEditTab('card')" class="px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-500 bg-transparent hover:bg-white/5 transition-all flex-shrink-0">Canvas</button>
+            <button type="button" id="tab-edit-frames" onclick="switchEditTab('frames')" class="px-4 py-2 rounded-full text-[10px] uppercase font-bold tracking-widest text-zinc-500 bg-transparent hover:bg-white/5 transition-all flex-shrink-0">Frames & Glow</button>
           </div>
 
           <form id="profile-edit-form" class="flex-1 flex flex-col overflow-hidden">
@@ -337,7 +337,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, onSnapshot, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBuMxUVPoxi-bGujHCGokuogkq79TR05ac",
@@ -465,6 +465,8 @@
         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userDocId), userDetails);
       }
       currentUserDetails = { ...userDetails, docId: userDocId };
+      await updateDoc(doc(db, "artifacts", appId, "public", "data", "users", userDocId), { online: true, lastActive: serverTimestamp() });
+      if (window.innerWidth >= 768) document.getElementById("sidebar").classList.remove("hidden");
       populateLocalSessionViews();
       subscribeToUsers(); subscribeToMessages();
       hideElement("auth-screen"); showElement("main-interface"); hideElement("loading-screen");
@@ -571,16 +573,44 @@
 
     function hexToRgb(h) { const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h); return r ? `${parseInt(r[1],16)}, ${parseInt(r[2],16)}, ${parseInt(r[3],16)}` : "255, 255, 255"; }
 
+    
+    window.addEventListener('visibilitychange', () => {
+      if (!currentUserDetails || !currentUserDetails.docId) return;
+      const isOnline = document.visibilityState === 'visible';
+      updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUserDetails.docId), {
+          online: isOnline,
+          lastActive: serverTimestamp()
+      }).catch(()=>{});
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (!currentUserDetails || !currentUserDetails.docId) return;
+      // We use beacon for more reliable offline reporting if needed, but updateDoc might work in beforeunload.
+      updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUserDetails.docId), {
+          online: false,
+          lastActive: serverTimestamp()
+      }).catch(()=>{});
+    });
+
     function subscribeToUsers() {
       activeUserUnsubscribe = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'users')), snapshot => {
         const uList = document.getElementById("online-users-list"); uList.innerHTML = "";
-        snapshot.forEach(doc => {
-          const user = doc.data(); allUsersCache[user.uid] = user;
+        let users = [];
+        snapshot.forEach(doc => users.push(doc.data()));
+        users.sort((a, b) => {
+          if (a.uid === currentUser.uid) return -1;
+          if (b.uid === currentUser.uid) return 1;
+          if (a.online && !b.online) return -1;
+          if (!a.online && b.online) return 1;
+          return (b.lastActive?.toMillis() || 0) - (a.lastActive?.toMillis() || 0);
+        });
+        users.forEach(user => {
+          allUsersCache[user.uid] = user;
           const isSelf = user.uid === currentUser.uid;
           const div = document.createElement("div");
           div.className = "flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/60 transition-colors cursor-pointer group";
           div.onclick = () => showUserProfile(user.uid);
-          div.innerHTML = `<div class="flex items-center gap-2.5 min-w-0"><div class="relative flex-shrink-0"><img id="sidebar-pfp-${user.uid}" src="${user.avatar || DEFAULT_AVATAR}" class="w-8 h-8 rounded-full object-cover border border-black z-10"><span class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-black online-pulse z-20"></span></div><div class="min-w-0"><div class="text-xs font-semibold flex items-center transition-colors truncate"><span style="color: ${user.nameColor || '#fff'}">${user.username}</span> ${user.badge ? `<span class="ml-1 text-xs select-none">${user.badge}</span>` : ''} ${isSelf ? '<span class="text-[9px] text-zinc-650 font-normal ml-1">(You)</span>' : ''}</div><div class="text-[9px] text-zinc-500 uppercase tracking-tight truncate">${user.gender} • ${user.age} yrs</div></div></div><div><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-zinc-700 group-hover:text-zinc-500 transition-colors"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></div>`;
+          div.innerHTML = `<div class="flex items-center gap-2.5 min-w-0"><div class="relative flex-shrink-0"><img id="sidebar-pfp-${user.uid}" src="${user.avatar || DEFAULT_AVATAR}" class="w-8 h-8 rounded-full object-cover border border-black z-10">${user.online ? '<span class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-black online-pulse z-20"></span>' : '<span class="absolute bottom-0 right-0 w-2 h-2 bg-zinc-600 rounded-full border border-black z-20"></span>'}</div><div class="min-w-0"><div class="text-xs font-semibold flex items-center transition-colors truncate"><span style="color: ${user.nameColor || '#fff'}">${user.username}</span> ${user.badge ? `<span class="ml-1 text-xs select-none">${user.badge}</span>` : ''} ${isSelf ? '<span class="text-[9px] text-zinc-650 font-normal ml-1">(You)</span>' : ''}</div><div class="text-[9px] text-zinc-500 uppercase tracking-tight truncate">${user.gender} • ${user.age} yrs</div></div></div><div><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-zinc-700 group-hover:text-zinc-500 transition-colors"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></div>`;
           uList.appendChild(div);
           setTimeout(() => applyPfpStylesToElement(document.getElementById(`sidebar-pfp-${user.uid}`), user), 50);
         });
@@ -654,7 +684,7 @@
           nameColor: document.getElementById("edit-name-color").value, badge: getRadio("edit_badge_input"),
           pfpStyle: getRadio("edit_pfp_style"), pfpWidth: document.getElementById("edit-pfp-width").value, pfpColor: document.getElementById("edit-pfp-color").value,
           cardStyle: getRadio("edit_card_style"), cardColor: document.getElementById("edit-card-color").value,
-          cardGlow: getRadio("edit_card_glow"), cardBg: getRadio("edit_card_bg"), lastActive: serverTimestamp()
+          cardGlow: getRadio("edit_card_glow"), cardBg: getRadio("edit_card_bg"), online: true, lastActive: serverTimestamp()
         };
         delete updated.docId;
         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUserDetails.docId), updated);
